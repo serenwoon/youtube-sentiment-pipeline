@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""유튜브 댓글 수집 뼈대 — YouTube Data API v3 commentThreads.
+"""유튜브 댓글 수집 — YouTube Data API v3 commentThreads.
 
-2023년 캡스톤에서는 Selenium으로 스크롤·정렬을 자동화해 수집했다.
-여기서는 공식 Data API를 쓴다 — 플랫폼 약관을 지키고, 페이지 구조 변경에 깨지지 않는다.
+2023년 캡스톤 때는 Selenium으로 스크롤과 정렬을 자동화해서 긁었다.
+여기서는 공식 API를 쓴다. 약관 문제가 없고 페이지 구조가 바뀌어도 안 깨진다.
 
 사용 전 준비:
     1. Google Cloud Console에서 YouTube Data API v3 키 발급
