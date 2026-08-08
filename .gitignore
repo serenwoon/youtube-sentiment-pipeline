@@ -1,0 +1,18 @@
+# 실데이터는 절대 커밋하지 않는다 (README 데이터 정책 참조)
+data/real/
+*.xlsx
+
+# 자격 증명
+.env
+*.key
+
+# 에이전트 작업 메모 — 포트폴리오 콘텐츠가 아니다
+CLAUDE.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
