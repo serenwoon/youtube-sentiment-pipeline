@@ -13,25 +13,35 @@ TF-IDF가 무작위 추측을 못 넘긴 게 이 스크립트를 쓴 이유다. 
 
 사용법:
     python3 src/baselines/sbert_classifier.py data/real/train.csv data/real/golden.csv > pred.csv
-    python3 src/evaluate.py data/real/golden.csv pred.csv
+    python3 src/evaluate.py --bootstrap data/real/golden.csv pred.csv
 
 모델과 C는 학습셋 내부 5-fold 교차검증으로 골랐다. 골든셋은 보지 않았다.
 
-    모델 (LogReg C=1)                        CV macro F1
+C 탐색은 시드 20개로 다시 쟀다 (ko-sroberta 고정, 폴드 시드 0–19):
+
+    설정             평균   최소–최대   시드별 1위
+    LogReg C=0.1    0.319  0.257–0.357   1/20
+    LogReg C=1      0.331  0.278–0.385   1/20
+    LogReg C=3      0.341  0.278–0.406   2/20  ← 채택
+    LogReg C=10     0.347  0.308–0.392   1/20
+    LogReg C=30     0.359  0.293–0.422  11/20
+    LinearSVC C=1   0.342  0.294–0.382   4/20
+
+C=30의 평균이 제일 높지만 여섯 설정의 구간이 전부 겹치고, 한 설정의 시드 간
+편차(±0.03)가 설정 사이의 차이보다 크다. 학습 154건에서 이 표로 고를 수 있는
+것은 없다는 뜻이다. 처음 고른 C=3을 그대로 둔다 — 평균 순위를 따라 C=30으로
+갈아타면 개선이 아니라 노이즈를 좇는 것이다.
+
+아래 모델 비교는 시드 하나로만 쟀다. 모델마다 수백 MB를 내려받아야 해서
+C 표처럼 다시 돌리지 않았고, 그래서 이 순위는 그대로 믿을 게 못 된다.
+ko-sroberta를 쓰는 근거는 "1위여서"가 아니라 "이 급에서 아무거나 하나"에 가깝다.
+
+    모델 (LogReg C=1, 시드 1개)              CV macro F1
     jhgan/ko-sroberta-multitask                   0.354  ← 채택
     BM-K/KoSimCSE-roberta                         0.335
     intfloat/multilingual-e5-small                0.314
     snunlp/KR-SBERT-V40K-klueNLI-augSTS           0.285
     jhgan/ko-sbert-multitask                      0.285
-    (TF-IDF char_wb(2,4) 비교값)                   0.282
-
-    ko-sroberta + C 탐색                     CV macro F1
-    C=0.1  0.338 / C=1  0.354 / C=3  0.387 ← 채택
-    C=10   0.365 / C=30 0.377
-    LinearSVC C=1  0.369
-
-C 값들 사이의 차이는 학습 154건 기준으로 노이즈 범위와 겹친다. C=3을 골랐지만
-0.354~0.387 구간은 사실상 구분되지 않는다고 보는 게 맞다.
 """
 import csv
 import os
