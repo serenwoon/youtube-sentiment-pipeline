@@ -27,6 +27,15 @@ jobs:
             exit 1
           }
 
+      - name: 부트스트랩 — 같은 시드면 같은 값이 나오는지
+        run: |
+          a=$(python3 src/evaluate.py --bootstrap --rounds 2000 \
+            data/sample_comments.csv data/sample_predictions.csv | tail -6)
+          b=$(python3 src/evaluate.py --bootstrap --rounds 2000 \
+            data/sample_comments.csv data/sample_predictions.csv | tail -6)
+          echo "$a"
+          [ "$a" = "$b" ] || { echo "같은 시드인데 값이 다르다. 재현이 안 된다."; exit 1; }
+
       - name: 다수 클래스 베이스라인
         run: |
           python3 src/baselines/majority.py data/sample_comments.csv > /tmp/majority.csv
