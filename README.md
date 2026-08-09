@@ -39,19 +39,21 @@ weighted F1 0.833
 - [x] 평가 하네스
 - [x] 라벨링 기준
 - [x] 수집·샘플링·라벨링 도구
-- [x] **골든셋 247건** — 자동차 리뷰 영상 5개, 수작업 라벨링
-- [x] 학습셋 210건 (골든셋과 겹침 0건)
+- [x] **골든셋 198건** — 자동차 리뷰 영상 5개, 수작업 라벨링 후 정제
+- [x] 학습셋 154건 (골든셋과 겹침 0건)
 - [x] 분류기 비교 3종 — 다수 클래스 / 어휘 규칙 / TF-IDF
 - [ ] LLM zero-shot (API 크레딧 필요)
 - [ ] 대시보드
 
 | 방법 | macro F1 | 정확도 |
 | --- | --- | --- |
-| 다수 클래스 | 0.193 | 0.409 |
-| 어휘 규칙 | 0.275 | 0.393 |
-| **TF-IDF + 로지스틱 회귀** | **0.345** | 0.393 |
+| 다수 클래스 | 0.195 | 0.414 |
+| 어휘 규칙 | 0.285 | 0.404 |
+| **TF-IDF + 로지스틱 회귀** | **0.334** | 0.404 |
 
-정확도는 셋이 거의 같은데 macro F1은 1.8배 벌어진다. 아무것도 안 하는 쪽이 정확도가 제일 높다는 게 이 표의 요점이다 — [results/](results/) 참조.
+정확도는 셋이 거의 같은데 macro F1은 1.7배 벌어진다. 아무것도 안 하는 쪽이 정확도가 제일 높다.
+
+측정을 끝낸 뒤 평가셋에서 라벨 노이즈를 발견해 골든셋과 학습셋을 다시 정제했다. 점수가 오를 줄 알았는데 떨어졌다 — 왜 그런지는 [results/](results/)에 적었다.
 
 ## 구성
 
@@ -60,10 +62,11 @@ data/                        샘플 + 스키마 (원문 비공개)
 docs/labeling-guide.md       라벨링 기준
 results/                     비교 결과
 src/collect_youtube.py       수집 (YouTube Data API)
-src/sample_for_labeling.py   라벨링 후보 추출
+src/sample_for_labeling.py   라벨링 후보 추출 (--exclude로 학습/평가 분리)
 src/label.py                 라벨링 (터미널)
+src/review.py                규칙 1 재검토
 src/evaluate.py              평가 하네스
-src/baselines/               분류기
+src/baselines/               분류기 — majority / lexicon / embed_classifier
 ```
 
 ## 라벨
