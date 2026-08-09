@@ -17,6 +17,7 @@
 import csv
 import os
 import re
+import shutil
 import sys
 import termios
 import tty
@@ -30,6 +31,16 @@ PATTERNS = [
     ("타임스탬프", r"\d{1,2}:\d{2}"),
     ("인물·정치", r"이명박|윤석열|문재인|대통령|정치"),
 ]
+
+
+def write_csv(path, fieldnames, rows):
+    """임시 파일에 다 쓰고 나서 원본 자리로 옮긴다 (os.replace는 원자적이다)."""
+    tmp = path + ".tmp"
+    with open(tmp, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(rows)
+    os.replace(tmp, path)
 
 
 def read_key():
@@ -84,26 +95,27 @@ def main(gold_path):
         print("제외할 것이 없었다. 그대로 둔다.")
         return
 
-    keep_ids = {r["id"] for r in removed}
-    with open(gold_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["id", "text", "label"])
-        w.writeheader()
-        w.writerows(r for r in rows if r["id"] not in keep_ids)
+    # 골든셋은 다시 만들려면 며칠짜리 수작업이다. 덮어쓰기 전에 사본을 남기고,
+    # 임시 파일에 다 쓴 뒤 한 번에 바꾼다. 중간에 죽어도 원본은 그대로다.
+    backup = gold_path + ".bak"
+    shutil.copy2(gold_path, backup)
+
+    removed_ids = {r["id"] for r in removed}
+    write_csv(gold_path, ["id", "text", "label"],
+              [r for r in rows if r["id"] not in removed_ids])
 
     existing = []
     if os.path.exists(excl_path):
         with open(excl_path, newline="", encoding="utf-8") as f:
             existing = list(csv.DictReader(f))
-    with open(excl_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["id", "label"])
-        w.writeheader()
-        w.writerows(existing)
-        w.writerows({"id": r["id"], "label": "대상아님"} for r in removed)
+    write_csv(excl_path, ["id", "label"],
+              existing + [{"id": r["id"], "label": "대상아님"} for r in removed])
 
     kept = len(rows) - len(removed)
     total = kept + len(existing) + len(removed)
     print(f"{len(removed)}건을 제외로 옮겼다. 골든셋 {kept}건.")
     print(f"제외율 {(len(existing) + len(removed)) / total:.1%}")
+    print(f"덮어쓰기 전 사본: {backup}")
 
 
 if __name__ == "__main__":

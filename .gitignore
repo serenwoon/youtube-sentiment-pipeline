@@ -2,6 +2,10 @@
 data/real/
 *.xlsx
 
+# review.py가 골든셋을 덮어쓰기 전에 남기는 사본·임시 파일
+*.bak
+*.tmp
+
 # 자격 증명
 .env
 *.key
