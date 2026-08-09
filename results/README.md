@@ -17,6 +17,13 @@
 
 다수 클래스 행부터 채운다. 전부 '긍정'이라고 답하는 분류기의 점수다. 이게 없으면 나머지 숫자가 좋은 건지 나쁜 건지 판단할 기준이 없다.
 
+```bash
+python3 src/baselines/majority.py data/real/golden.csv > /tmp/majority.csv
+python3 src/evaluate.py data/real/golden.csv /tmp/majority.csv
+```
+
+이 값은 골든셋의 클래스 분포에 따라 크게 달라진다. 긍정이 몰려 있으면 높게 나오고, 고르면 낮게 나온다. 그래서 **점수와 함께 분포도 적어둔다.** 나중에 "왜 이때는 0.4였지" 하고 헷갈리지 않으려면 필요하다.
+
 비용과 지연도 같이 적는다. 정확도만 보면 항상 큰 모델이 이기는데 실제로는 그렇게 고르지 않는다.
 
 ## 기록할 것

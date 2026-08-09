@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 평가 하네스
+        run: |
+          python3 src/evaluate.py data/sample_comments.csv data/sample_predictions.csv
+
+      - name: README에 적힌 macro F1과 실제가 같은지
+        run: |
+          actual=$(python3 src/evaluate.py data/sample_comments.csv data/sample_predictions.csv \
+            | awk '/^macro F1/ {print $3}')
+          echo "실제 $actual"
+          grep -q "$actual" README.md || {
+            echo "README의 수치가 실제와 다르다. 실제 macro F1 = $actual"
+            exit 1
+          }
+
+      - name: 다수 클래스 베이스라인
+        run: |
+          python3 src/baselines/majority.py data/sample_comments.csv > /tmp/majority.csv
+          python3 src/evaluate.py data/sample_comments.csv /tmp/majority.csv
+
+      - name: 샘플러
+        run: |
+          python3 src/sample_for_labeling.py -n 5 data/sample_comments.csv \
+            > /dev/null 2>/tmp/sampler.log || true
+          cat /tmp/sampler.log
+
+      - name: 파이썬 파싱
+        run: |
+          python3 -m compileall -q src/
+
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 실데이터가 커밋되지 않았는지
+        run: |
+          if git ls-files | grep -q '^data/real/'; then
+            echo "data/real/ 아래 파일이 커밋돼 있다. 댓글 원문은 올리지 않는다."
+            git ls-files | grep '^data/real/'
+            exit 1
+          fi
+
+      - name: 키가 하드코딩되지 않았는지
+        run: |
+          if git grep -nE '(sk-[A-Za-z0-9]{16,}|AIza[A-Za-z0-9_-]{30,}|ghp_[A-Za-z0-9]{30,})' -- . ; then
+            echo "키처럼 보이는 문자열이 있다."
+            exit 1
+          fi
+          echo "없음"

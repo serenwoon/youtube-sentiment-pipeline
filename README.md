@@ -1,5 +1,7 @@
 # youtube-sentiment-pipeline
 
+[![ci](https://github.com/serenwoon/youtube-sentiment-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/serenwoon/youtube-sentiment-pipeline/actions/workflows/ci.yml)
+
 자동차 리뷰 영상 댓글을 수집해 감정을 3분류하고, 그 결과를 골든셋으로 평가하는 파이프라인.
 
 2023년 캡스톤에서 댓글 수집과 Superset 대시보드를 맡았다. 감정분석은 AWS Comprehend에 맡겼고, 결과가 맞는지는 따로 확인하지 않았다. 대시보드에 언어별 막대가 서긴 했는데 그 높이가 맞는지 알 방법이 없었다. 그 부분을 다시 만들면서 평가 단계를 넣었다.
