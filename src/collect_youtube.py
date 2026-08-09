@@ -41,6 +41,7 @@ def fetch_comments(video_id, api_key, max_pages=5):
             snippet = item["snippet"]["topLevelComment"]["snippet"]
             yield {
                 "id": item["id"],
+                "video_id": video_id,
                 "text": snippet["textDisplay"].replace("\n", " "),
                 "like_count": snippet["likeCount"],
                 "published_at": snippet["publishedAt"],
@@ -57,7 +58,8 @@ def main():
     if not api_key:
         sys.exit("YOUTUBE_API_KEY 환경변수를 설정하세요")
     writer = csv.DictWriter(
-        sys.stdout, fieldnames=["id", "text", "like_count", "published_at"]
+        sys.stdout,
+        fieldnames=["id", "video_id", "text", "like_count", "published_at"],
     )
     writer.writeheader()
     for row in fetch_comments(sys.argv[1], api_key):

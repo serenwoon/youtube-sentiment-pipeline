@@ -1,6 +1,6 @@
 # youtube-sentiment-pipeline
 
-유튜브 댓글을 수집해 감정을 3분류하고, 그 결과를 골든셋으로 평가하는 파이프라인.
+자동차 리뷰 영상 댓글을 수집해 감정을 3분류하고, 그 결과를 골든셋으로 평가하는 파이프라인.
 
 2023년 캡스톤에서 댓글 수집과 Superset 대시보드를 맡았다. 감정분석은 AWS Comprehend에 맡겼고, 결과가 맞는지는 따로 확인하지 않았다. 대시보드에 언어별 막대가 서긴 했는데 그 높이가 맞는지 알 방법이 없었다. 그 부분을 다시 만들면서 평가 단계를 넣었다.
 
@@ -36,6 +36,7 @@ weighted F1 0.833
 
 - [x] 평가 하네스
 - [x] 라벨링 기준
+- [x] 수집·샘플링·라벨링 도구
 - [ ] 골든셋 200건
 - [ ] 분류기 비교 (zero-shot / 임베딩 분류기)
 - [ ] 대시보드
@@ -43,23 +44,42 @@ weighted F1 0.833
 ## 구성
 
 ```
-data/                   샘플 + 스키마 (원문 비공개)
-docs/labeling-guide.md  라벨링 기준
-results/                비교 결과
-src/evaluate.py         평가 하네스
-src/collect_youtube.py  수집 (YouTube Data API)
-src/baselines/          분류기
+data/                        샘플 + 스키마 (원문 비공개)
+docs/labeling-guide.md       라벨링 기준
+results/                     비교 결과
+src/collect_youtube.py       수집 (YouTube Data API)
+src/sample_for_labeling.py   라벨링 후보 추출
+src/label.py                 라벨링 (터미널)
+src/evaluate.py              평가 하네스
+src/baselines/               분류기
 ```
 
 ## 라벨
 
 긍정 / 부정 / 복합 3분류.
 
-'복합'은 "노래는 좋은데 무대 연출은 아쉽다" 같은 댓글을 위한 것이다. 이런 걸 긍정이나 부정 한쪽에 넣으면 라벨에 노이즈가 섞인다.
+'복합'은 "승차감은 좋은데 실내가 싸구려 같다" 같은 댓글을 위한 것이다. 차는 평가 항목이 여러 개라(승차감·연비·마감·가격) 한쪽만 좋은 경우가 흔한데, 이걸 긍정이나 부정으로 몰면 라벨에 노이즈가 섞인다.
 
-`NEUTRAL`은 두지 않았다. Comprehend 같은 서비스는 보통 주는데, "1등" 같은 댓글은 감정이 중립인 게 아니라 평가가 없는 것이라 성격이 다르다. 한 라벨로 묶으면 분류기가 애매한 걸 전부 거기 넣어도 점수가 유지된다. 그래서 라벨로 흡수하지 않고 수집 단계에서 걸렀다.
+`NEUTRAL`은 두지 않았다. Comprehend 같은 서비스는 보통 주는데, "1등" 이나 "형 목소리 좋다" 같은 댓글은 감정이 중립인 게 아니라 차에 대한 평가가 없는 것이라 성격이 다르다. 한 라벨로 묶으면 분류기가 애매한 걸 전부 거기 넣어도 점수가 유지된다. 그래서 라벨로 흡수하지 않고 수집 단계에서 걸렀다.
 
 판정 규칙은 [docs/labeling-guide.md](docs/labeling-guide.md)에 있다.
+
+## 골든셋 만들기
+
+```bash
+export YOUTUBE_API_KEY=...
+
+# 1. 영상별로 수집
+python3 src/collect_youtube.py VIDEO_ID > data/real/raw_VIDEO_ID.csv
+
+# 2. 후보 뽑기 (영상별로 고르게, 시드 고정)
+python3 src/sample_for_labeling.py -n 260 data/real/raw_*.csv > data/real/candidates.csv
+
+# 3. 라벨링 — 키 하나씩. 중간에 끊어도 이어서 된다
+python3 src/label.py data/real/candidates.csv data/real/golden.csv
+```
+
+200건이 목표인데 260건을 뽑는 건 라벨링 중에 규칙 1로 빠지는 게 나오기 때문이다. 제외된 건수는 `excluded.csv`에, 판정이 애매했던 건 `hard_cases.md`에 쌓인다.
 
 ## 골든셋을 먼저 만드는 이유
 
